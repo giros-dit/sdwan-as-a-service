@@ -1,0 +1,13 @@
+#!/bin/bash
+VIMNUM1="1"
+NSNAME1="sdedge1"
+
+VIMNUM2="2"
+NSNAME2="sdedge2"
+
+# ns_sdwan.sh provides configuration to establish the VXLAN tunnel
+# and to apply the SD-WAN policies using the SDN controller in VNF:wan
+
+./ns_sdwan.sh $VIMNUM1 $NSNAME1 10.100.2.1
+
+./ns_sdwan.sh $VIMNUM2 $NSNAME2 10.100.1.1

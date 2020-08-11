@@ -3,6 +3,7 @@ SD-Wan as a Service Demo
 
 ## Diagrams 
 ![global scenario](doc/global-arch-tun.png)
+
 ![ns architecture](doc/ns-architecture-editable.png)
 
 ## Requirements

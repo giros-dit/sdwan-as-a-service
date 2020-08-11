@@ -1,0 +1,61 @@
+#!/bin/bash
+
+function pause(){
+   echo "--"
+   read -p "Press any key to continue..."
+}
+
+echo "--"
+echo "-- Restarting vim-emu..."
+VIMEMUID=$( docker ps -a | grep vim-emu | awk '{ print $1 }' )
+echo $VIMEMUID
+
+if [ "$VIMEMUID" ]; then
+  echo "--"
+  echo "-- Deleting vim-emu docker..."
+  echo docker stop $VIMEMUID
+  docker stop $VIMEMUID
+  echo docker rm $VIMEMUID
+  docker rm $VIMEMUID
+fi
+
+#pause
+
+echo "--"
+echo "-- Starting vim-emu docker..."
+echo docker run --name vim-emu -t -d --rm --privileged --pid='host' --network=netosm -v /var/run/docker.sock:/var/run/docker.sock vim-emu-img python examples/osm_default_daemon_topology_2_pop.py
+docker run --name vim-emu -t -d --rm --privileged --pid='host' --network=netosm -v /var/run/docker.sock:/var/run/docker.sock vim-emu-img python examples/osm_default_daemon_topology_2_pop.py
+
+#pause
+
+
+VIMEMUNAMEFILE="/home/upm/.vim-emu-id"
+VIMEMUNAME=$( cat $VIMEMUNAMEFILE 2> /dev/null )
+if [ ! "$VIMEMUNAME" ]; then
+    VIMEMUNAME="emu-vim0"
+fi
+
+echo "--"
+echo "-- Deleting previous vim-emu registered in OSM..."
+#VIMREGISTEREDID=$( osm vim-list | grep $VIMEMUNAME | tr -d '|' | awk '{ print $2 }' )
+VIMIDS=$( osm vim-list | grep -v "vim name" | grep -v "\------" | tr -d '|' | awk '{ print $2 }' )
+for id in $VIMIDS; do
+  echo "-- Deleting $id..."
+  echo osm vim-delete --force $id
+  osm vim-delete --force $id
+  sleep 5
+done
+
+#pause
+
+ID=$( grep -Eo "[[:digit:]]+" <<< "${VIMEMUNAME}"| tail -1 )
+ID=$((ID+1))
+echo "emu-vim${ID}" > $VIMEMUNAMEFILE
+
+echo "-- Registering new vim-emu in OSM (emu-vim${ID})..."
+export VIMEMU_HOSTNAME=$(sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' vim-emu)
+echo osm vim-create --name central1-${ID} --user username --password password --auth_url http://$VIMEMU_HOSTNAME:6001/v2.0 --tenant tenantName --account_type openstack
+osm vim-create --name central1-${ID} --user username --password password --auth_url http://$VIMEMU_HOSTNAME:6001/v2.0 --tenant tenantName --account_type openstack
+echo osm vim-create --name central2-${ID} --user username --password password --auth_url http://$VIMEMU_HOSTNAME:6002/v2.0 --tenant tenantName --account_type openstack
+osm vim-create --name central2-${ID} --user username --password password --auth_url http://$VIMEMU_HOSTNAME:6002/v2.0 --tenant tenantName --account_type openstack
+

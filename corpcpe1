@@ -1,0 +1,19 @@
+#!/bin/bash
+VIMNUM="1"
+NSNAME="corpcpe1"
+
+ACCESSNET="AccessNet1"
+EXTNET="ExtNet1"
+VNFTUNIP="10.255.0.1"
+CUSTUNIP="10.255.0.2"
+VCPEPUBIP="10.100.1.1"
+VCPEGW="10.100.1.254"
+
+LANROUTE="10.20.1.0/24"
+
+# ns_internet.sh provides Internet access with NAT to the corporate router
+# the corporate router should use IP address 192.168.255.253/24
+./ns_internet.sh $VIMNUM $NSNAME $ACCESSNET $EXTNET $VNFTUNIP $CUSTUNIP $VCPEPUBIP $VCPEGW
+
+# ns_lanroute.sh provides configuration to access the corporate LAN
+./ns_lanroute.sh $VIMNUM $NSNAME $LANROUTE

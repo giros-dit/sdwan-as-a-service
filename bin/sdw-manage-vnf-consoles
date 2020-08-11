@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# List of NSs and VNFs names
+nss=('corpcpe1' 'sdedge1' 'sdedge2')
+vnfnames=('access' 'cpe' 'wan')
+
+allnss=${nss[*]}
+allvnfs=${vnfnames[*]}
+USAGE="
+Usage:
+  sdw-manage-vnf-consoles <cmd>
+       to open|close all consoles
+       Valid values:
+           <cmd>: open close
+
+  sdw-manage-vnf-consoles <cmd> <ns_name>
+       to open the consoles of all the VNFs of one NS
+       Valid values:
+           <ns_name>:  $allnss
+
+  sdw-manage-vnf-consoles <cmd> <ns_name> <vnf-name>
+       to open the console of a specific vnf of one ns
+       Valid values:
+           <ns_name>:  $allnss
+           <vnf-name>: $allvnfs
+"
+
+function manage_vnf_console {
+
+    cmd=$1
+    nsname=$2
+    vnfname=$3
+
+    if [ "$cmd" == 'open' ]; then
+        echo "--"
+        echo "-- Starting console of VNF $vnfname of NS $nsname"
+        # Get docker id
+        echo "docker ps | grep $nsname | grep vnf-$vnfname | cut -d' ' -f1"
+        dockerid=$( docker ps | grep $nsname | grep vnf-$vnfname | cut -d' ' -f1)
+        echo "i=$i, j=$j, ${vnfnames[$j]}-> $dockerid"
+
+	if [ "$dockerid" ]; then 
+            # Set docker hostname
+            echo "docker exec -ti $dockerid hostname $nsname-$vnfname"
+            docker exec -ti $dockerid hostname $nsname-$vnfname
+
+            # Start console
+            echo "xfce4-terminal --title $nsname-$vnfname --hide-menubar -x docker exec -ti $dockerid bash >/dev/null 2>&1 &"
+            xfce4-terminal --title $nsname-$vnfname --hide-menubar -x docker exec -ti $dockerid bash >/dev/null 2>&1 &
+	else
+	    echo "-- WARNING: VNF $nsname-$vnfname not started"
+	fi
+
+    elif [ "$cmd" == 'close' ]; then
+        echo "--"
+        echo "-- Closing console of VNF $vnfname of NS $nsname"
+        while wmctrl -c $nsname-$vnfname; do sleep 0.5; done
+    fi
+}
+
+#
+# Main
+#
+if [ "$1" == 'open' ] || [ "$1" == 'close' ] ; then
+    cmd=$1
+else
+    echo ""
+    echo "ERROR: unknown command '$1'"
+    echo "$USAGE"
+    exit 1
+fi
+if [ "$2" ]; then
+    if [[ ! " ${nss[@]} " =~ " $2 " ]]; then
+        echo ""
+        echo "ERROR: unknown NS '$2'"
+        echo "$USAGE"
+        exit 1
+    fi 
+    NS=$2
+    if [ ! "$3" ]; then
+        echo ""
+        echo "--"
+        echo "-- Starting all consoles of VNFs of NS $NS"
+        echo "--"
+        for j in ${!vnfnames[*]}; do 
+            manage_vnf_console $cmd $NS ${vnfnames[$j]}
+        done
+        exit 0
+    else
+        if [[ ! " ${vnfnames[@]} " =~ " $3 " ]]; then
+            echo ""
+            echo "ERROR: unknown VNF '$3'"
+            echo "$USAGE"
+            exit 1
+        fi 
+    fi 
+    VNF=$3
+    manage_vnf_console $cmd $NS $VNF
+
+else
+    echo "--"
+    echo "-- Starting all consoles"
+    echo "--"
+
+    for i in ${!nss[*]}; do 
+        for j in ${!vnfnames[*]}; do 
+            manage_vnf_console $cmd ${nss[$i]} ${vnfnames[$j]}
+        done
+    done
+fi
+    echo "-- done"
