@@ -32,7 +32,7 @@ sudo docker build -t vnf-wan .
 cd ..
 ```
 
-4. Onboarding on OSM of vnfs and network service from pck folder
+4. Onboarding on OSM of vnfs and network service from pck folder. To create the sdedge network service description, edit the provided corpcpe and include the wan-vnf.
 
 5. Registration of two vim-emu instances
 
@@ -46,7 +46,7 @@ bin/osm-restart-vimemu2
 
 ```shell
 ./sdedge1
-./sdedge2
+./sdedge2   # sdedge2 script not distributed. Create it by cloning and adapting sdedge1.
 ./policies
 ```
 
